@@ -1,6 +1,8 @@
 import textwrap
 
 # HID kódy pre slovenský QWERTY layout s podporou diakritiky
+ALTGR = 0x40  # Pravý Alt (AltGr)
+SHIFT = 0x02  # Shift
 SK_HID_MAP = {
     'a': (0x00, 0x04), 'A': (0x02, 0x04),
     'á': (0x02, 0x1A), 'Á': (0x20, 0x1A),
@@ -57,8 +59,18 @@ SK_HID_MAP = {
     '[': (0x00, 0x2F), ']': (0x00, 0x30),
     '{': (0x02, 0x2F), '}': (0x02, 0x30),
     '|': (0x02, 0x31), '\\': (0x00, 0x31),
+
+    'ˇ': (0x2D, ALTGR),  # AltGr + '-'
+    '%': (0x02, 0x22),
     '/': (0x00, 0x38),
     '§': (0x40, 0x16),  # AltGr + s
+
+    '´': (ALTGR, 0x2D),  # AltGr + - (mŕtvy znak pre akútny prízvuk, napr. ´a)
+    '=': (SHIFT, 0x30),  # Shift + 0 (na slovenskej QWERTY klávesnici)
+    '+': (SHIFT, 0x2E),  # Shift + = → na SK layoute je to spolu: '+' cez Shift+ú
+    '€': (ALTGR, 0x08),  # AltGr + E (HID kód pre 'e' je 0x08)
+    'ý': (ALTGR, 0x1C),  # AltGr + Y → na SK layout nie je natívne, workaround
+    'Ý': (ALTGR | SHIFT, 0x1C),  # teoretická veľká verzia
 }
 
 text = input("Zadaj text na konverziu do HID kódov (SK layout):\n")
@@ -72,11 +84,12 @@ for char in text:
         print(f"Warning: znak '{char}' nie je v mape, nahradzujem medzerou")
         hid_data.extend([0x00, 0x2C])  # nahradiť medzerou
 
-# Výstup ako C pole
+# Vytvorenie výstupu
 output = ', '.join(f'0x{b:02X}' for b in hid_data)
 lines = textwrap.wrap(output, 64)
 
 print("\n// Vygenerované HID pole pre SK layout")
+print(f"// Pôvodný text: {text}")
 print("const uint8_t key_arr[] PROGMEM = {")
 for line in lines:
     print(f"  {line},")
